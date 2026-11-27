@@ -103,12 +103,15 @@
 <div id="scr-title" class="scr"><div class="panel">
   <div class="logo">PIXEL<br><span>FOOTBALL</span></div>
   <p class="tag">Run it. Throw it. Dive for the end zone. Celebrate!</p>
+  <button class="big" id="b-cont" style="background:#4ade80;box-shadow:inset 0 -5px 0 #15803d,0 5px 0 #000"></button><br id="b-contbr">
   <button class="big" id="b-college">🏈 COLLEGE</button><br>
   <button class="big alt" id="b-pro">🏟️ PRO</button>
   <details class="how"><summary>How to play</summary>
     • <b>Pick a play</b>, then tap <b>HIKE</b>.<br>
     • <b>Drag</b> on the left side of the screen to run. On a computer use the arrow keys.<br>
-    • Passing: tap <b>1</b>, <b>2</b> or <b>3</b> to throw to that player. Throw to the one with nobody near him!<br>
+    • Passing: tap <b>1</b>, <b>2</b> or <b>3</b> to throw to that player. If he's open he'll always catch it! If a defender is right on him, the defender can pick it off.<br>
+    • Hold on to the ball: there's a small chance of a <b>fumble</b> when you get tackled.<br>
+    • Your game saves after every play. Leave anytime and tap <b>CONTINUE GAME</b> to pick up where you left off.<br>
     • With the ball: <b>DIVE</b> to reach for extra yards or into the end zone. <b>JUKE</b> makes a tackler miss. Near the goal line, <b>STRUT</b> high-steps in.<br>
     • On defense you control the player with the <b>yellow arrow</b>. <b>DIVE</b> to tackle, <b>SWITCH</b> to change players.<br>
     • Score a touchdown and pick your <b>celebration</b>!<br>
@@ -129,7 +132,7 @@
   <button class="big" id="b-kick">KICK OFF!</button><br>
   <button class="mid" id="b-chgopp">Change opponent</button><button class="mid" id="b-chgme">Change my team</button>
 </div></div>
-<div id="scr-pause" class="scr hidden"><div class="panel"><h2>Timeout</h2><button class="big" id="b-resume">KEEP PLAYING</button><br><button class="mid" id="b-quit">Quit game</button></div></div>
+<div id="scr-pause" class="scr hidden"><div class="panel"><h2>Timeout</h2><button class="big" id="b-resume">KEEP PLAYING</button><br><button class="mid" id="b-quit">Save &amp; quit</button><br><small style="font:9px var(--px);color:#9aa0aa;line-height:2">Your game is saved. Tap CONTINUE GAME to keep playing later.</small></div></div>
 <div id="scr-over" class="scr hidden"><div class="panel"><h2 id="ovT"></h2><p class="sub" id="ovS"></p><div id="ovB"></div></div></div>
 
 <script>
@@ -265,7 +268,7 @@ function startCall(){
   const g=G;if(!g)return;g.phase='call';g.pt=0;lineup();g.ocall=null;g.dcall=null;
   const cpuOff=g.poss!==g.user,cpuDef=(1-g.poss)!==g.user;
   if(cpuOff)g.ocall=cpuOffCall();if(cpuDef)g.dcall=cpuDefCall();
-  if(!g.demo)showCalls();updHUD();
+  if(!g.demo){showCalls();save.cur={mode:g.mode,me:g.T[0].name,opp:g.T[1].name,score:g.score.slice(),q:g.q,clock:g.clock,qlen:g.qlen,poss:g.poss,los:g.los,down:g.down,fd:g.fd,ot:g.ot,fhr:g.firstHalfRecv};store();}updHUD();
 }
 function cpuOffCall(){const g=G,togo=g.fd-g.los;
   if(g.down===4&&!(g.ot&&false)){const kd=100-g.los+17;const late=g.q>=4&&g.clock<40&&g.score[g.poss]<g.score[1-g.poss];
@@ -437,10 +440,13 @@ function resolveCatch(){
   const g=G,b=g.ball,r=b.tgt;const aim={x:b.ex,y:b.ey};const dr=r.down?99:D(r,aim);
   let bd=99,bdp=null;for(const o of g.P)if(o.t!==r.t&&!o.down){const d=D(o,aim);if(d<bd){bd=d;bdp=o;}}
   const userR=r.t===g.user;
-  const far=Math.hypot(b.ex-b.sx,b.ey-b.sy)>24;if(dr<1.9){let p=.94-(bd<1.1?.42:bd<2?.2:0)+(userR?.03:0)-(far?.12:0);if(rand()<p){giveBall(r);r.x=aim.x;r.y=aim.y;sfx.catch();
-      if(!g.demo&&r.x>g.x0+12)say('NICE CATCH!',null,1);return;}
-    if(bd<1.4&&rand()<.35){intercept(bdp);return;}}
-  else if(bd<1.7&&rand()<(userR?.33:.4)){intercept(bdp);return;}
+  const catchIt=(t)=>{giveBall(r);r.x=aim.x;r.y=aim.y;sfx.catch();if(!g.demo&&r.x>g.x0+12)say(t||'NICE CATCH!',null,1);};
+  if(dr<1.9){
+    if(bd>2.5){catchIt();return;}                       // open = automatic catch
+    if(bd<1.1&&bd<dr*.85){intercept(bdp);return;}          // defender in better position near the ball wins it
+    if(rand()<(userR?.6:.55)){catchIt('TOUGH CATCH!');return;}
+    if(bd<1.5&&rand()<.15){intercept(bdp);return;}}
+  else if(bd<1.4&&rand()<.55){intercept(bdp);return;}              // receiver not there, defender is
   endPlay('inc');
 }
 function intercept(p){const g=G;giveBall(p);p.x=g.ball.ex||p.x;g.ball={st:'held'};sfx.catch();if(!g.demo){say('INTERCEPTED!',null,1.4,1);if(p.t===g.user){g.ctrl=p;sfx.crowd(2);}else sfx.bad();}}
@@ -499,17 +505,20 @@ function live(){
   if(g.clock<=0&&g.q<=4&&false)return;
 }
 function tackle(c,o){const g=G;g.tackled=c;c.down=true;c.downT=0;o.down=true;o.downT=.9;sfx.hit();for(let i=0;i<8;i++)g.parts.push({x:c.x,y:c.y,z:.2,vx:rr(-3,3),vy:rr(-3,3),vz:rr(3,7),c:'#5b3b1d',l:.6});
+  if(c.t===g.poss&&g.car===c&&rand()<.01){g.parts.push({x:c.x,y:c.y,z:1,vx:rr(-4,4),vy:rr(-4,4),vz:rr(4,8),c:'BALL',l:1.4,ball:1});endPlay('fumble');return;}
   endPlay(c===g.QB&&g.car===g.QB&&c.t===g.poss&&c.x<g.x0?'sack':'tackle');}
 function endPlay(why){
   const g=G;if(g.phase!=='live')return;g.phase='dead';g.pt=0;sfx.whistle();g.strut=false;
   const c=g.car;const res={why,stop:why==='inc'||why==='out'};
   if(why==='inc'){res.kind='inc';}
+  else if(why==='fumble'){res.x=clamp(c.x,10.5,109.5);res.t=1-g.poss;res.kind='turnover';res.stop=true;}
   else{res.x=clamp(c.x,0,120);res.t=c.t;
     if(c.t===g.poss){if(res.x<10){res.kind='safety';}else res.kind='spot';}
     else res.kind='turnover';}
-  g.result=res;if(c&&why!=='inc'){c.down=true;g.tackled=c;}
+  g.result=res;if(why==='fumble')g.car=null;if(c&&why!=='inc'){c.down=true;g.tackled=c;}
   const u=g.user;
   if(!g.demo){if(why==='inc')say('INCOMPLETE',null,1.3);
+    else if(why==='fumble'){say('FUMBLE!',g.T[res.t].name+' recovers!',1.8,1);if(res.t===g.user)sfx.crowd(2);else sfx.bad();}
     else if(res.kind==='safety')say('SAFETY!','2 points',1.6,1);
     else if(res.kind==='spot'){const gain=Math.round(res.x-10-g.los);const fd=res.x-10>=g.fd;
       if(why==='sack')say('SACK!',gain+' yards',1.4,1);else if(fd&&g.poss===u){say('FIRST DOWN!',(gain>=0?'+':'')+gain+' yards',1.4,1);sfx.fd();}
@@ -573,7 +582,7 @@ function kickStep(){
 function gameOver(){
   const g=G;g.over=true;g.phase='over';running=false;
   if(g.demo){setTimeout(()=>{if(G===g)demo();},1200);return;}
-  document.body.classList.remove('playing');updBtns();
+  document.body.classList.remove('playing');updBtns();delete save.cur;store();
   const win=g.score[0]>g.score[1],tie=g.score[0]===g.score[1],opp=g.T[1],bucket=save[g.mode];
   let extra='';
   if(win){save.wins++;if(!bucket.beat.includes(opp.name)){bucket.beat.push(opp.name);extra='<br>🏆 New team beaten: '+opp.name+'!';}store();sfx.td();}else sfx.bad();
@@ -661,7 +670,13 @@ function updHUD(){const g=G;if(!g||g.demo)return;$('s0').textContent=g.score[0];
   $('qt').textContent=g.ot?'OT':ord(Math.min(4,g.q)).toUpperCase();const s=Math.ceil(g.clock);$('clk').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
   $('n0').className=g.poss===0?'poss':'';$('n1').className=g.poss===1?'poss':'';
   $('dd').textContent=`🏈 ${g.T[g.poss].name} · ${ord(g.down)} & ${g.fd>=100?'GOAL':Math.max(1,Math.round(g.fd-g.los))} · ${spot(g.los)}`;}
-function show(id){for(const s of ['scr-title','scr-pick','scr-setup','scr-pause','scr-over'])$(s).classList.toggle('hidden',s!==id);
+function updCont(){const c=save.cur,ok=c&&findT(c.mode,c.me)&&findT(c.mode,c.opp);$('b-cont').classList.toggle('hidden',!ok);$('b-contbr').classList.toggle('hidden',!ok);
+  if(ok)$('b-cont').innerHTML=`▶ CONTINUE GAME<br><small style="font-size:10px;line-height:2">${c.me} ${c.score[0]} - ${c.score[1]} ${c.opp} · ${c.ot?'OT':'Q'+c.q}</small>`;}
+function resumeGame(){const c=save.cur;if(!c)return;audio();show(null);newGame(c.mode,findT(c.mode,c.me),findT(c.mode,c.opp),false);const g=G;
+  Object.assign(g,{score:c.score.slice(),q:c.q,clock:c.clock,qlen:c.qlen,ot:c.ot,firstHalfRecv:c.fhr});changePoss(c.poss,c.los);g.down=c.down;g.fd=c.fd;G.snapCam=1;
+  say('WELCOME BACK!',`${g.T[0].name} ${g.score[0]} - ${g.score[1]} ${g.T[1].name}`,2);startCall();}
+$('b-cont').onclick=resumeGame;
+function show(id){if(id==='scr-title'){updCont();$('msg').innerHTML='';}for(const s of ['scr-title','scr-pick','scr-setup','scr-pause','scr-over'])$(s).classList.toggle('hidden',s!==id);
   if(id){$('calls').classList.add('hidden');$('cel').classList.add('hidden');}}
 function demo(){const L=LEAGUE[rand()<.6?'college':'pro'];const a=pick(L);let b=pick(L);while(b===a)b=pick(L);newGame(L===LEAGUE.college?'college':'pro',a,b,true);G.snapCam=1;}
 let pickMode='college',pickWhat='me',pickMe=null;

@@ -37,6 +37,10 @@
   #callTitle{font-size:11px;color:var(--gold);text-shadow:2px 2px 0 #000;margin-bottom:6px}
   #cards{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
   .card{font:inherit;font-size:10px;color:#fff;background:var(--panel);border:2px solid #000;box-shadow:inset 0 0 0 2px #4a5180,0 4px 0 #000;padding:10px 8px;min-width:96px;cursor:pointer;line-height:1.7}
+  #ftabs{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:0 0 6px}
+  .ftab{font:inherit;font-size:9px;color:#cfd5f5;background:#1b1f33;border:2px solid #000;padding:7px 8px;cursor:pointer;box-shadow:0 3px 0 #000}
+  .ftab span{font-family:system-ui;font-size:13px}
+  .ftab.on{background:var(--gold);color:#1a1200;box-shadow:inset 0 -3px 0 #c99400,0 3px 0 #000}
   .card .ic{font-size:22px;display:block;font-family:system-ui}
   .card small{display:block;color:#9aa3d0;font-size:8px}
   .card:active{transform:translateY(3px);box-shadow:inset 0 0 0 2px #4a5180,0 1px 0 #000}
@@ -117,7 +121,7 @@
   <button class="big" id="b-college">🏈 COLLEGE</button><br>
   <button class="big alt" id="b-pro">🏟️ PRO</button>
   <details class="how"><summary>How to play</summary>
-    • <b>Pick a play</b>, then tap <b>HIKE</b>.<br>
+    • <b>Pick a play</b>, then tap <b>HIKE</b>. Tap the tabs on top (<b>Shotgun</b>, <b>I-Form</b>, <b>Trips</b>, <b>Trick Plays</b>) for 18 different plays!<br>
     • <b>Drag</b> on the left side of the screen to run. On a computer use the arrow keys.<br>
     • Passing: <b>hold</b> <b>1</b>, <b>2</b> or <b>3</b> and watch the power bar. Let go when it's in the <b>green zone</b> to hit your receiver. The yellow ✕ on the field shows where the ball will land. Your receiver runs to the ball for you, and if he's open he always catches it!<br>
     • Hold on to the ball: there's a small chance of a <b>fumble</b> when you get tackled.<br>
@@ -237,8 +241,29 @@ const sfx={whistle(){if(!can())return;const t=AC.currentTime,o=AC.createOscillat
 /* ======================= GAME STATE ======================= */
 const SP={OL:5.2,DL:6.0,QB:6.7,RB:8.0,WR:8.2,LB:7.7,CB:8.2,S:8.1};
 const SKINS=['#f1c27d','#e0ac69','#c68642','#8d5524','#5c3a1e','#ffdbac'];
-const OFF=[{id:'mid',name:'Run Middle',ic:'🏃',d:'Hand off up the gut',type:'run'},{id:'sweep',name:'Sweep',ic:'↪️',d:'Run to the outside',type:'run'},
-  {id:'quick',name:'Quick Pass',ic:'🎯',d:'Short slants + flat',type:'pass'},{id:'deep',name:'Deep Bomb',ic:'🚀',d:'Go long!',type:'pass'}];
+// Routes are [dx,dy] steps from where the player lines up. For receivers, +dy means "toward the middle of the field".
+// For the RB, dy is multiplied by the play's side (or random side). hold=stop at the end of the route.
+const FORMS=[{id:'gun',name:'Shotgun',ic:'🔫'},{id:'i',name:'I-Form',ic:'💪'},{id:'trips',name:'Trips',ic:'3️⃣'},{id:'trick',name:'Trick Plays',ic:'🎩'}];
+const OFF=[
+ {id:'mid',f:'gun',name:'Run Middle',ic:'🏃',d:'Hand off up the gut',type:'run',lane:'gap'},
+ {id:'sweep',f:'gun',name:'Sweep',ic:'↪️',d:'Run to the outside',type:'run',lane:'edge'},
+ {id:'quick',f:'gun',name:'Quick Pass',ic:'🎯',d:'Short slants + flat',type:'pass',r:{w0:[[4,0],[8,5]],w1:[[4,0],[8,5]],rb:[[1,7],[5,9]]}},
+ {id:'deep',f:'gun',name:'Deep Bomb',ic:'🚀',d:'Go long!',type:'pass',r:{w0:[[30,0]],w1:[[10,0],[26,7]],rb:[[1,-1.2]]},rbBlock:1},
+ {id:'screen',f:'gun',name:'RB Screen',ic:'🧲',d:'Dump it to the RB',type:'pass',pref:'rb',r:{w0:[[14,0]],w1:[[14,0]],rb:[[-1.5,6],[1,9]]}},
+ {id:'qbdraw',f:'gun',name:'QB Draw',ic:'🏃‍♂️',d:'QB keeps it and runs',type:'run',runner:'QB',lane:'gap'},
+ {id:'power',f:'i',name:'Power Run',ic:'🦬',d:'Run behind the big guys',type:'run',lane:'gap',side:-1},
+ {id:'toss',f:'i',name:'Toss',ic:'🔄',d:'Pitch it to the edge',type:'run',lane:'edge',side:1},
+ {id:'sneak',f:'i',name:'QB Sneak',ic:'🐢',d:'Push for 1 yard',type:'run',runner:'QB'},
+ {id:'pa',f:'i',name:'Play Action',ic:'🎭',d:'Fake the run, throw deep',type:'pass',fake:1,qbT:1.9,r:{w0:[[4,0],[20,-5]],w1:[[30,0]],rb:[[2,0],[3,1.5]]},rbBlock:1},
+ {id:'te',f:'i',name:'TE Seam',ic:'📏',d:'Tight end up the middle',type:'pass',r:{w0:[[24,1]],w1:[[7,0],[7,-5]],rb:[[1,6],[4,8]]}},
+ {id:'flood',f:'trips',name:'Flood',ic:'🌊',d:'3 receivers, 1 side',type:'pass',r:{w0:[[5,0],[11,-6]],w1:[[28,0]],rb:[[1,-6],[4,-11]]},rbSide:-1},
+ {id:'curls',f:'trips',name:'Curls',ic:'🪝',d:'Run out, turn back',type:'pass',qbT:1.3,r:{w0:[[10,0],[9,1.5]],w1:[[12,0],[10.5,1.5]],rb:[[1,6],[3,9]]},rbSide:1,hold:1},
+ {id:'bubble',f:'trips',name:'Bubble Screen',ic:'🫧',d:'Super quick throw',type:'pass',pref:'w0',qbT:.6,r:{w0:[[-1.5,-2],[0,-3]],w1:[[3,0]],rb:[[1,-1.2]]},rbBlock:1,w1Block:1},
+ {id:'hail',f:'trips',name:'Hail Mary',ic:'🙏',d:'Everybody go deep!',type:'pass',qbT:2.2,r:{w0:[[32,2]],w1:[[34,0]],rb:[[3,6],[32,8]]},rbSide:-1},
+ {id:'reverse',f:'trick',name:'Reverse',ic:'🔁',d:'WR takes it the other way',type:'run',runner:'WR',lane:'edge',handT:.75,r:{w1:[[-4.5,13.6]],rb:[[1,4],[3,10]]},rbSide:1,preHand:1},
+ {id:'flea',f:'trick',name:'Flea Flicker',ic:'🦗',d:'Hand off, pitch back, BOMB!',type:'pass',flea:1,r:{w0:[[30,0]],w1:[[12,0],[28,6]]}},
+ {id:'statue',f:'trick',name:'Statue',ic:'🗽',d:'Fake a throw, sneaky run',type:'run',lane:'edge',handT:1.05,fakePass:1,r:{w0:[[14,0]],w1:[[14,0]]}},
+];
 const DEF=[{id:'blitz',name:'Blitz',ic:'⚡',d:'Rush the QB'},{id:'bal',name:'Balanced',ic:'🛡️',d:'A bit of both'},{id:'deep',name:'Deep Cover',ic:'🧱',d:'Stop the bomb'}];
 let G=null,running=false,paused=false,QLEN=120;
 function newGame(mode,me,opp,demo){
@@ -283,13 +308,18 @@ function startCall(){
 function cpuOffCall(){const g=G,togo=g.fd-g.los;
   if(g.down===4&&!(g.ot&&false)){const kd=100-g.los+17;const late=g.q>=4&&g.clock<40&&g.score[g.poss]<g.score[1-g.poss];
     if(!late){if(kd<=50)return'fg';if(togo>2||g.los<45)return'punt';}}
-  const w=togo>8?{mid:2,sweep:2,quick:3,deep:4}:togo<3?{mid:5,sweep:2,quick:2,deep:1}:{mid:3,sweep:2,quick:3,deep:2};
-  let r=rand()*12,acc=0;const ks=Object.keys(w),tot=ks.reduce((a,k)=>a+w[k],0);r=rand()*tot;for(const k of ks){acc+=w[k];if(r<acc)return k;}return'mid';}
+  if(togo<=1&&rand()<.35)return'sneak';
+  if(rand()<.06)return pick(['reverse','flea','statue']);
+  const passP=togo>8?.7:togo<3?.3:.5;const want=rand()<passP?'pass':'run';
+  const opts=OFF.filter(p=>p.type===want&&p.f!=='trick'&&p.id!=='sneak'&&(p.id!=='hail'||(g.q>=4&&g.clock<20)||(g.q===2&&g.clock<12)));return pick(opts).id;}
 function cpuDefCall(){const togo=G.fd-G.los;const r=rand();if(togo>8)return r<.5?'deep':r<.8?'bal':'blitz';if(togo<3)return r<.5?'blitz':'bal';return r<.25?'blitz':r<.75?'bal':'deep';}
 function showCalls(){
   const g=G,box=$('cards');box.innerHTML='';const off=g.poss===g.user;
   $('callTitle').textContent=off?`${ord(g.down)} & ${g.fd>=100?'GOAL':g.fd-g.los} · PICK A PLAY`:'DEFENSE · PICK A CALL';
-  const list=off?[...OFF]:[...DEF];
+  if(off){if(!g.tab)g.tab='gun';let tb=$('ftabs');if(!tb){tb=document.createElement('div');tb.id='ftabs';$('calls').insertBefore(tb,box);}tb.innerHTML='';tb.style.display='';
+    for(const f of FORMS){const t=document.createElement('button');t.className='ftab'+(g.tab===f.id?' on':'');t.innerHTML=`<span>${f.ic}</span> ${f.name}`;t.onclick=()=>{audio();sfx.click();g.tab=f.id;showCalls();};tb.appendChild(t);}}
+  else if($('ftabs'))$('ftabs').style.display='none';
+  const list=off?OFF.filter(p=>p.f===g.tab):[...DEF];
   if(off&&g.down===4){list.push({id:'punt',name:'Punt',ic:'🦵',d:'Kick it away',sp:1});const kd=Math.round(100-g.los+17);if(kd<=58)list.push({id:'fg',name:'Field Goal',ic:'🥅',d:kd+' yard try',sp:1});}
   for(const c of list){const b=document.createElement('button');b.className='card'+(c.sp?' sp':'');b.innerHTML=`<span class="ic">${c.ic}</span>${c.name}<small>${c.d}</small>`;
     b.onclick=()=>{audio();sfx.click();if(off)g.ocall=c.id;else g.dcall=c.id;$('calls').classList.add('hidden');toPresnap();};box.appendChild(b);}
@@ -297,14 +327,24 @@ function showCalls(){
 }
 function toPresnap(){const g=G;if(!g.ocall||!g.dcall)return;
   if(g.ocall==='punt'||g.ocall==='fg'){kick(g.ocall);return;}
-  g.play=OFF.find(p=>p.id===g.ocall);g.phase='presnap';g.pt=0;updBtns();}
+  g.play=OFF.find(p=>p.id===g.ocall)||OFF[0];setForm(g.play.f);g.phase='presnap';g.pt=0;updBtns();}
+function setForm(f){const g=G,x0=g.x0;
+  if(f==='i'){g.QB.x=x0-1.6;g.QB.y=MID;g.RB.x=x0-6;g.RB.y=MID;g.WR[0].x=x0-.8;g.WR[0].y=MID-4.6;g.WR[1].y=MID+14;}
+  else if(f==='trips'){g.RB.x=x0-4.5;g.RB.y=MID-2;g.WR[0].y=MID+9;g.WR[1].y=MID+15;}
+  else{g.WR[0].y=MID-15;g.WR[1].y=MID+15;}
+  for(let i=0;i<2;i++){g.CB[i].y=g.WR[i].y;g.CB[i].x=x0+(f==='i'&&i===0?3:f==='trips'&&i===0?6.5:4);}
+  g.LB.y=f==='trips'?MID+3:MID;}
 function snap(){
   const g=G;if(g.phase!=='presnap')return;g.phase='live';g.t=0;g.car=g.QB;g.ball={st:'held'};g.handed=0;g.canPass=g.play.type==='pass';g.qbRun=0;
-  g.qbT=rr(1.25,2.4);g.sweep=rand()<.5?-1:1;g.strut=false;g.result=null;
+  const pl=g.play;g.qbT=pl.qbT?pl.qbT+rr(0,.5):rr(1.25,2.4);g.sweep=pl.side||(rand()<.5?-1:1);g.strut=false;g.result=null;g.pitched=0;g.runner=pl.runner==='QB'?g.QB:null;
+  if(pl.fakePass){g.canPass=false;}
   const x0=g.x0,rt=(p,pts,m)=>{p.route=pts.map(([dx,dy])=>[p.x+dx,clamp(p.y+dy*m,1.5,FW-1.5)]);p.ri=0;};
   const mT=1,mB=-1;
-  if(g.play.id==='quick'){rt(g.WR[0],[[4,0],[8,5]],mT);rt(g.WR[1],[[4,0],[8,5]],mB);rt(g.RB,[[1,7],[5,9]],g.sweep);}
-  else if(g.play.id==='deep'){rt(g.WR[0],[[30,0]],mT);rt(g.WR[1],[[10,0],[26,7]],mB);rt(g.RB,[[1,-1.2]],1);g.RB.blockAfter=1;}
+  const inw=p=>p.y<MID?1:-1;
+  if(pl.r){if(pl.r.w0)rt(g.WR[0],pl.r.w0,inw(g.WR[0]));if(pl.r.w1)rt(g.WR[1],pl.r.w1,inw(g.WR[1]));if(pl.r.rb)rt(g.RB,pl.r.rb,pl.rbSide||(pl.id==='deep'||pl.rbBlock?1:g.sweep));}
+  if(pl.rbBlock)g.RB.blockAfter=1;if(pl.w1Block){g.WR[1].blockAfter=1;}
+  if(pl.hold){g.WR[0].hold=1;g.WR[1].hold=1;}
+  if(pl.preHand){g.WR[1].preHand=1;g.RB.preHand=1;}
   g.ctrl=g.LB;sfx.hike();updBtns();
 }
 function giveBall(p){G.car=p;G.ball={st:'held'};}
@@ -337,6 +377,7 @@ function inputVec(){let x=(keys.r?1:0)-(keys.l?1:0)+stick.x,y=(keys.d?1:0)-(keys
   // screen y down = field y down; camera never rotates
   return[x,y];}
 function userP(){const g=G;if(!g||g.user<0||g.phase!=='live')return null;const c=g.car;
+  if(c&&c.t===g.user&&g.play&&g.play.flea&&!g.pitched&&c===g.RB)return null;
   if(c&&c.t===g.user)return c;if(!c&&g.ball.st==='air'&&g.poss===g.user)return null;
   if((c&&c.t!==g.user)||(!c&&g.poss!==g.user)){if(!g.ctrl||g.ctrl.t!==g.user){const tg=c||{x:g.ball.ex,y:g.ball.ey};let bd=1e9;for(const p of g.P)if(p.t===g.user&&!p.down&&D(p,tg)<bd){bd=D(p,tg);g.ctrl=p;}}return g.ctrl;}return null;}
 function releaseThrow(){const g=G;if(!g||!g.charge)return;const c=g.charge;g.charge=null;$('pbar').classList.add('hidden');
@@ -402,14 +443,17 @@ function cover(p,sp){
 function routeAI(p,sp){
   if(!p.route)return[0,0];
   if(p.ri<p.route.length){const w=p.route[p.ri];if(Math.hypot(w[0]-p.x,w[1]-p.y)<.8){p.ri++;}else return toward(p,w[0],w[1],sp,0);}
-  if(p.blockAfter)return blockAI(p,sp,['DL','LB']);
+  if(p.hold){const a=p.route[p.route.length-1];return toward(p,a[0],a[1],sp,.3);}
+  if(p.blockAfter)return blockAI(p,sp,p.role==='WR'?['CB','S','LB']:['DL','LB']);
   const a=p.route[p.route.length-1],b=p.route.length>1?p.route[p.route.length-2]:[a[0]-1,a[1]];let dx=a[0]-b[0],dy=a[1]-b[1];const l=Math.hypot(dx,dy)||1;
   let vy=dy/l*sp;if(p.y<2.5&&vy<0||p.y>FW-2.5&&vy>0)vy=0;return[dx/l*sp,vy];
 }
 function carrierAI(p,sp){
   const g=G,dir=p.t===g.poss?1:-1;
-  if(g.play&&g.play.id==='sweep'&&p===g.RB&&dir===1&&g.t<1.5&&p.x<g.x0+.5)return toward(p,g.x0+1,MID+g.sweep*11,sp,0);
-  if(g.play&&g.play.id==='mid'&&p===g.RB&&dir===1&&g.t<1.1&&p.x<g.x0+1.2)return toward(p,g.x0+1.5,MID+g.sweep*3.9,sp,0);
+  const pl=g.play;
+  if(pl&&pl.flea&&p===g.RB&&!g.pitched&&dir===1)return toward(p,g.x0-.5,MID,sp*.55,0);
+  if(pl&&pl.lane==='edge'&&p===g.runner&&dir===1&&g.t<(pl.handT||.38)+1.15&&p.x<g.x0+.5)return toward(p,g.x0+1,MID+g.sweep*11,sp,0);
+  if(pl&&pl.lane==='gap'&&p===g.runner&&dir===1&&g.t<(pl.handT||.38)+.75&&p.x<g.x0+1.2)return toward(p,g.x0+1.5,MID+(p===g.QB?g.sweep*2:g.sweep*3.9),sp,0);
   let dx=dir,dy=0;
   for(const o of g.P){if(o.t===p.t||o.down||o.eng)continue;const d=D(o,p);if(d>8||(o.x-p.x)*dir<-2.5)continue;const w=2.2/(d*d+.6);dy+=(p.y-o.y)/(d||1)*w*1.7;dx+=(p.x-o.x)/(d||1)*w*.5;}
   if(p.y<3)dy+=.9;if(p.y>FW-3)dy-=.9;if(dx*dir<.25)dx=.25*dir;
@@ -421,8 +465,9 @@ function carrierAI(p,sp){
 function qbAI(p,sp){
   const g=G;const rushers=opp(p).filter(o=>!o.eng&&D(o,p)<3);
   if(g.t>g.qbT||(rushers.length&&g.t>.7)){let best=null,bs=-1e9;
-    for(const r of [g.WR[0],g.WR[1],g.RB]){if(r.down||(r.blockAfter&&r.ri>=r.route.length))continue;let sep=99;for(const o of opp(r))sep=Math.min(sep,D(o,r));
-      const sc=Math.min(sep,6)+(r.x-g.x0)*.12-(D(r,p)>32?3:0);if(sc>bs){bs=sc;best=r;}}
+    for(const r of [g.WR[0],g.WR[1],g.RB]){if(r.down||(r.blockAfter&&r.route&&r.ri>=r.route.length)||!r.route)continue;let sep=99;for(const o of opp(r))sep=Math.min(sep,D(o,r));
+      const pk=g.play.pref==='rb'?g.RB:g.play.pref==='w0'?g.WR[0]:null;
+      const sc=Math.min(sep,6)+(r.x-g.x0)*.12-(D(r,p)>32?3:0)+(r===pk?3:0);if(sc>bs){bs=sc;best=r;}}
     if(best&&(bs>1.6||g.t>2.9||rushers.length&&g.t>1.2)){throwTo(p,best);return[0,0];}
     if(g.t>3.6){g.qbRun=1;g.canPass=false;}}
   if(rushers.length){const o=rushers[0];return[-.3*sp,(p.y>o.y?1:-1)*sp*.8];}
@@ -432,17 +477,21 @@ function ai(p){
   const g=G,c=g.car,b=g.ball;let sp=SP[p.role];
   if(g.user>=0&&p.t!==g.user)sp*=.94;
   if(p===c){if(p===g.QB&&g.canPass&&!g.qbRun&&b.st==='held')return qbAI(p,sp);return carrierAI(p,sp*(p.t===g.poss?1:.97));}
-  const pursuit=c&&(c.t!==g.poss||c!==g.QB||g.qbRun||!g.canPass);
+  const fakeP=g.play&&g.play.fakePass&&!g.handed&&c===g.QB,fleaP=g.play&&g.play.flea&&!g.pitched;
+  const pursuit=c&&(c.t!==g.poss||(c!==g.QB&&!fleaP)||g.qbRun||(!g.canPass&&!fakeP&&!fleaP));
   if(c&&c.t!==p.t){if(p.eng)return[0,0];
-    if(g.play.type==='run'&&c.t===g.poss&&g.t<(p.role==='LB'?(g.dcall==='blitz'?.3:.95):p.role==='DL'?0:.5))return[0,0];
+    {const pl=g.play,runish=(pl.type==='run'||pl.fake)&&!(pl.fakePass&&!g.handed);
+     const ref=pl.handT?(g.handed?g.handAt:99):0,dl=p.role==='LB'?(g.dcall==='blitz'?.3:.95):p.role==='DL'?(pl.handT?.3:0):.5;
+     if(runish&&c.t===g.poss&&g.t<ref+(pl.handT?dl*.75:dl))return[0,0];}
     if(pursuit||p.role==='DL'||(p.role==='LB'&&g.dcall==='blitz'))return pursue(p,c,sp);return cover(p,sp);}
   if(!c){const aim={x:b.ex,y:b.ey};
     if(p.t===g.poss){if(b.tgt===p)return toward(p,b.ex,b.ey,sp*1.08,.2);if(p.role==='OL')return[0,0];return toward(p,aim.x,aim.y,sp*.5,4);}
     if(D(p,aim)<11)return toward(p,aim.x,aim.y,sp,0);return p.role==='DL'?toward(p,g.QB.x,g.QB.y,sp*.5):cover(p,sp);}
   // teammate has the ball
   if(p.role==='OL')return blockAI(p,sp,['DL','LB','S','CB']);
-  if(c.t===g.poss&&c===g.QB&&!pursuit){if(p.route)return routeAI(p,sp);return[0,0];}
-  if(p===g.RB&&!g.handed&&g.play.type==='run')return toward(p,g.QB.x+.6,g.QB.y+.4,sp*.6,0);
+  if(p.preHand&&p.route&&!g.handed)return routeAI(p,sp);
+  if(c.t===g.poss&&(c===g.QB||fleaP)&&!pursuit){if(p.route&&p!==c)return routeAI(p,sp);return[0,0];}
+  if(p===g.RB&&!g.handed&&(g.play.type==='run'&&(!g.play.runner||g.play.runner==='RB')||g.play.flea))return toward(p,g.QB.x+.6,g.QB.y+.4,sp*.6,0);
   if(p===g.QB)return toward(p,c.x-4*(c.t===g.poss?1:-1),c.y,sp*.5);
   return blockAI(p,sp,['CB','S','LB','DL','WR','RB','QB','OL'],c);
 }
@@ -489,7 +538,11 @@ function step(){
 function settle(){for(const p of G.P){if(p.dive>0){p.dive-=DT;p.x+=p.dvx*DT;p.y+=p.dvy*DT;if(p.dive<=0){p.down=true;p.downT=.8;}}p.vx*=.85;p.vy*=.85;if(!p.down){p.x+=p.vx*DT;p.y+=p.vy*DT;}else if(p.downT>0&&(p.downT-=DT)<=0&&p!==G.tackled)p.down=false;}}
 function live(){
   const g=G,P=g.P;g.t+=DT;g.clock=Math.max(0,g.clock-DT);if(g.throwA>0)g.throwA-=DT;
-  if(g.play.type==='run'&&!g.handed&&g.t>=.38){g.handed=1;if(!g.QB.down&&g.car===g.QB){giveBall(g.RB);g.RB.x=Math.max(g.RB.x,g.QB.x-.3);}}
+  {const pl=g.play;
+   if(pl.type==='run'&&!g.handed&&pl.runner!=='QB'&&g.t>=(pl.handT||.38)){const rn=pl.runner==='WR'?g.WR[1]:g.RB;
+     if(pl.runner!=='WR'||D(rn,g.QB)<3.2||g.t>1.6){g.handed=1;if(!g.QB.down&&g.car===g.QB){giveBall(rn);g.runner=rn;g.handAt=g.t;rn.route=null;rn.preHand=0;if(rn===g.RB)g.RB.x=Math.max(g.RB.x,g.QB.x-.3);else{rn.x=g.QB.x-.4;rn.y=g.QB.y+.6;g.sweep=-1;}if(pl.fakePass)g.canPass=false;}}}
+   if(pl.flea&&!g.handed&&g.t>=.38){g.handed=1;if(!g.QB.down&&g.car===g.QB){giveBall(g.RB);g.canPass=false;}}
+   if(pl.flea&&g.handed&&!g.pitched&&g.t>=1.15&&g.car===g.RB&&!g.RB.down){g.pitched=1;g.ball={st:'held'};g.car=g.QB;g.canPass=true;g.qbT=g.t+rr(.5,1);sfx.throw();if(!g.demo&&g.poss===g.user)say('FLEA FLICKER!','Now throw it deep!',1.2);}}
   const u=userP();
   if(u&&g.car===g.QB&&u===g.QB&&g.canPass&&g.QB.x>g.x0+.3)g.canPass=false;
   for(const p of P){

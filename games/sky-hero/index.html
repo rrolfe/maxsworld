@@ -893,5 +893,21 @@ function loop(now){
 fit();startLevel((rand()*6)|0,true);show('scr-title');requestAnimationFrame(loop);
 window.__wh={get S(){return S},step,startLevel,levelDone,keys,save,render};
 </script>
+<script>
+/* No-zoom guard: stops pinch and double-tap zoom on phones, and snaps back if the page ever gets zoomed. */
+(function(){
+  var css=document.createElement('style');css.textContent='html,body,button,a,canvas,.k,.scr{touch-action:manipulation}body{touch-action:none}.scr{touch-action:pan-y}';document.head.appendChild(css);
+  ['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();},{passive:false});});
+  document.addEventListener('touchstart',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});
+  var lastEnd=0;
+  document.addEventListener('touchend',function(e){var n=Date.now();if(n-lastEnd<350)e.preventDefault();lastEnd=n;},{passive:false});
+  document.addEventListener('dblclick',function(e){e.preventDefault();},{passive:false});
+  var vm=document.querySelector('meta[name=viewport]'),base=vm&&vm.content;
+  function unzoom(){if(!vm||!window.visualViewport||visualViewport.scale<=1.01)return;
+    vm.content=base+',minimum-scale=1';setTimeout(function(){vm.content=base;window.dispatchEvent(new Event('resize'));},60);}
+  if(window.visualViewport){visualViewport.addEventListener('resize',function(){setTimeout(unzoom,250);});}
+  setInterval(unzoom,1500);
+})();
+</script>
 </body>
 </html>

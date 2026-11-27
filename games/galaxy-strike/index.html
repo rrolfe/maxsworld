@@ -57,6 +57,9 @@
   .hangar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
   .pl{font:inherit;color:#fff;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px}
   .pl .sw{width:100%;height:46px;border-radius:8px}
+  .hh{font:800 14px Orbitron,sans-serif;color:#9fe8ff;letter-spacing:2px;margin:10px 0 10px;text-align:left}
+  .ships{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .pl img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:8px;background:#050914}
   .pl .nm{font-size:13px;font-weight:800}
   .pl .tg{font:700 12px system-ui,sans-serif;color:#9fb3d6}
   .pl.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}
@@ -100,7 +103,7 @@
 </div>
 <div id="scr-map" class="scr hidden"><div class="panel"><h2>Choose a mission</h2><p class="total" id="mapTotal"></p><div class="map" id="map"></div>
   <button class="mid" id="b-hangar2">🚀 Hangar</button><button class="mid" id="b-maphome">Title screen</button></div></div>
-<div id="scr-hangar" class="scr hidden"><div class="panel"><h2>Max's Hangar</h2><p class="total" id="hangTotal"></p><div class="hangar" id="hangar"></div><button class="big" id="b-hangdone">DONE</button></div></div>
+<div id="scr-hangar" class="scr hidden"><div class="panel"><h2>Max's Hangar</h2><p class="total" id="hangTotal"></p><h3 class="hh">Choose your ship</h3><div class="hangar ships" id="hangShips"></div><h3 class="hh">Paint</h3><div class="hangar" id="hangar"></div><button class="big" id="b-hangdone">DONE</button></div></div>
 <div id="scr-result" class="scr hidden"><div class="panel"><h2 id="resTitle"></h2><div id="resStars"></div><p id="resSub"></p><div id="resBtns"></div></div></div>
 <div id="scr-pause" class="scr hidden"><div class="panel"><h2>Paused</h2><div><button class="big" id="b-resume">KEEP FLYING</button></div><button class="mid" id="b-quit">Back to missions</button></div></div>
 <div id="nogl">Sorry, this device can't run the 3D graphics for this game.</div>
@@ -342,6 +345,44 @@ function hawkWing(C){
   m.loft([{z:-6,rx:.08,ry:.08,y:0},{z:-3.3,rx:.14,ry:.14,y:0}],6,C.dark,7.65);
   return m.upload(1.1);
 }
+MB.prototype.ringZ=function(R1,R2,z0,z1,N,col,e){for(let i=0;i<N;i++){const a0=i/N*TAU,a1=(i+1)/N*TAU,c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1),am=(a0+a1)/2;
+  const o00=[c0*R2,s0*R2,z0],o10=[c1*R2,s1*R2,z0],o01=[c0*R2,s0*R2,z1],o11=[c1*R2,s1*R2,z1],i00=[c0*R1,s0*R1,z0],i10=[c1*R1,s1*R1,z0],i01=[c0*R1,s0*R1,z1],i11=[c1*R1,s1*R1,z1];
+  const zm=(z0+z1)/2,out=[Math.cos(am)*R2*3,Math.sin(am)*R2*3,zm];
+  this.tri(o00,o10,o11,col,[0,0,zm],e);this.tri(o00,o11,o01,col,[0,0,zm],e);this.tri(i00,i10,i11,col,out,e);this.tri(i00,i11,i01,col,out,e);
+  this.tri(o00,o10,i10,col,[0,0,z0+5],e);this.tri(o00,i10,i00,col,[0,0,z0+5],e);this.tri(o01,o11,i11,col,[0,0,z1-5],e);this.tri(o01,i11,i01,col,[0,0,z1-5],e);}};
+function canopy(m,C,y,z0,z1,w){const zm=(z0+z1)/2;m.loft([{z:z0,rx:.05,ry:.05,y:y-.15},{z:z0+(z1-z0)*.2,rx:w*.8,ry:w*.65,y:y},{z:zm,rx:w,ry:w*.8,y:y+.1},{z:z1-(z1-z0)*.2,rx:w*.75,ry:w*.6,y:y},{z:z1,rx:.06,ry:.06,y:y-.1}],10,C.glass);}
+function haloMesh(C){const m=new MB();
+  m.loft([{z:-10,rx:.05,ry:.05,y:0,c:C.dark},{z:-8,rx:.4,ry:.35,y:0},{z:-3,rx:.85,ry:.75,y:0},{z:2,rx:.9,ry:.8,y:0},{z:5,rx:.75,ry:.65,y:0,cap:C.glow,capE:1}],8,C.body,0,0,true);
+  canopy(m,C,.55,-5.5,-1,.5);
+  m.ringZ(3.05,3.5,1.8,4,28,C.body);m.ringZ(3.48,3.6,2.5,3.3,28,C.acc);
+  for(const s of [1,-1]){m.prism([[.7*s,2.2],[3.1*s,2.5],[3.1*s,3.6],[.7*s,3.9]],0,.2,C.dark);m.fin([[2.2,.6*s],[2.5,3.1*s],[3.6,3.1*s],[3.9,.6*s]],0,.2,C.dark);
+    m.prism([[.8*s,-1.5],[3.6*s,1.4],[3.6*s,2.2],[.8*s,1.4]],0,.18,C.body);
+    m.loft([{z:-2.6,rx:.12,ry:.12,y:0},{z:.4,rx:.16,ry:.16,y:0}],6,C.dark,3.95*s);
+    m.loft([{z:.2,rx:.25,ry:.25,y:0,cap:C.dark},{z:.8,rx:.48,ry:.48,y:0},{z:4.4,rx:.48,ry:.48,y:0},{z:5,rx:.4,ry:.4,y:0,cap:C.glow,capE:1}],10,C.body,3.95*s);}
+  return m.upload(1.1);}
+function mantaMesh(C){const m=new MB();
+  m.prism([[0,-8],[3,-4],[9,2],[8.5,3.5],[3,3],[0,4.5],[-3,3],[-8.5,3.5],[-9,2],[-3,-4]],0,.45,C.body);
+  for(const s of [1,-1]){m.prism([[6.4*s,.1],[9.02*s,2],[8.6*s,3.52],[7.6*s,3.3]],0,.5,C.acc);m.fin([[1.4,.2],[3.6,2.4],[4.5,2.4],[4.1,.2]],2.6*s,.14,C.dark);
+    m.prism([[2*s,-3.4],[5.6*s,.3],[5.2*s,.8],[1.7*s,-2.7]],.25,.04,C.acc);}
+  m.loft([{z:-7,rx:.1,ry:.1,y:.2},{z:-5,rx:1.2,ry:.6,y:.3},{z:0,rx:1.7,ry:.9,y:.3},{z:4.2,rx:1.4,ry:.6,y:.2,cap:C.dark}],8,C.body,0,0,true);
+  canopy(m,C,.95,-4.8,-1.2,.55);m.box(0,.1,4.45,2.3,.22,.12,C.glow,1);
+  for(const s of [1,-1])m.loft([{z:-2,rx:.1,ry:.1,y:-.1},{z:1,rx:.14,ry:.14,y:-.1}],6,C.dark,6.5*s);
+  return m.upload(1.1);}
+function thunderMesh(C){const m=new MB();
+  m.loft([{z:-9,rx:.5,ry:.4,y:0,c:C.dark},{z:-7,rx:1.5,ry:1.1,y:0},{z:-2,rx:2,ry:1.5,y:0},{z:4,rx:2,ry:1.5,y:0},{z:6,rx:1.6,ry:1.2,y:0,cap:C.dark}],8,C.body,0,0,true);
+  canopy(m,C,1.35,-6.5,-2.5,.75);m.ball(0,1.5,1.5,.95,C.dark,0,8);m.loft([{z:-1,rx:.13,ry:.13,y:1.6},{z:.8,rx:.13,ry:.13,y:1.6}],6,C.dark,.35);
+  m.loft([{z:-10.5,rx:.14,ry:.14,y:-1.2},{z:-7,rx:.2,ry:.2,y:-1.2}],6,C.dark);m.box(0,-1.2,-6.5,.45,.35,.9,C.dark);
+  for(const s of [1,-1]){m.prism([[1.6*s,-2],[7.8*s,0],[7.8*s,3],[1.6*s,4]],0,.4,C.body);m.prism([[4.8*s,-.8],[7.82*s,0],[7.82*s,.8],[4.8*s,.1]],.05,.44,C.acc);
+    for(const ex of [4,7]){m.loft([{z:-3,rx:.35,ry:.35,y:0,cap:C.dark},{z:-2.4,rx:.85,ry:.85,y:0},{z:5,rx:.85,ry:.85,y:0},{z:5.7,rx:.7,ry:.7,y:0,cap:C.glow,capE:1}],10,ex===7?C.dark:C.body,ex*s);}
+    m.loft([{z:-6.5,rx:.13,ry:.13,y:0},{z:-3,rx:.18,ry:.18,y:0}],6,C.dark,7*s);}
+  return m.upload(.9);}
+function twinMesh(C){const m=new MB();
+  for(const s of [1,-1]){m.loft([{z:-10,rx:.1,ry:.1,y:0,c:C.acc},{z:-8.5,rx:.6,ry:.6,y:0,c:C.acc},{z:-7,rx:.82,ry:.82,y:0},{z:4,rx:.95,ry:.95,y:0},{z:6,rx:.8,ry:.8,y:0,cap:C.glow,capE:1}],10,C.body,4*s);
+    m.fin([[2,.7],[4.4,2.4],[5.6,2.4],[5.6,.7]],4*s,.14,C.dark);m.fin([[4.3,2.1],[4.4,2.4],[5.6,2.4],[5.6,2.1]],4*s,.18,C.acc);}
+  m.prism([[-4,-2.5],[4,-2.5],[4,3],[-4,3]],0,.3,C.body);m.prism([[-3.6,1.6],[3.6,1.6],[3.6,2.4],[-3.6,2.4]],.17,.04,C.acc);
+  m.loft([{z:-7.5,rx:.1,ry:.1,y:.3,c:C.dark},{z:-6,rx:.8,ry:.6,y:.3},{z:0,rx:1.1,ry:.8,y:.3},{z:3.5,rx:.8,ry:.5,y:.25,cap:C.dark}],8,C.body,0,0,true);
+  canopy(m,C,.85,-6,-1.8,.55);
+  return m.upload(1.1);}
 function dartMesh(C){
   const m=new MB();
   m.loft([{z:-5,rx:.06,ry:.06,y:0},{z:-3,rx:.85,ry:.55,y:.05},{z:1.5,rx:1.25,ry:.75,y:0},{z:4.3,rx:.95,ry:.55,y:0,cap:C.glow,capE:1}],6,C.body,0,0,true);
@@ -429,11 +470,11 @@ function ringMesh(C){const m=new MB();for(let i=0;i<20;i++){const a=i/20*TAU,ca=
 
 /* ===================== data ===================== */
 const SKINS=[
- {name:'Starhawk',need:0,body:[.82,.84,.86],dark:[.32,.34,.38],acc:[.12,.45,.95],glass:[.08,.12,.2],glow:BLUE},
- {name:'Crimson Hawk',need:4,body:[.62,.12,.1],dark:[.2,.06,.05],acc:[.95,.8,.2],glass:[.08,.1,.14],glow:ORNG},
- {name:'Shadow Hawk',need:7,body:[.12,.13,.15],dark:[.05,.05,.06],acc:[1,.45,.1],glass:[.3,.12,.05],glow:ORNG},
- {name:'Emerald Hawk',need:10,body:[.2,.55,.35],dark:[.08,.2,.13],acc:[.9,.9,.95],glass:[.08,.12,.1],glow:[.4,1,.6]},
- {name:'Golden Hawk',need:13,body:[.95,.73,.2],dark:[.45,.32,.08],acc:[.1,.1,.12],glass:[.1,.1,.12],glow:[1,.85,.4]},
+ {name:'Arctic White',need:0,body:[.82,.84,.86],dark:[.32,.34,.38],acc:[.12,.45,.95],glass:[.08,.12,.2],glow:BLUE},
+ {name:'Crimson',need:4,body:[.62,.12,.1],dark:[.2,.06,.05],acc:[.95,.8,.2],glass:[.08,.1,.14],glow:ORNG},
+ {name:'Shadow',need:7,body:[.12,.13,.15],dark:[.05,.05,.06],acc:[1,.45,.1],glass:[.3,.12,.05],glow:ORNG},
+ {name:'Emerald',need:10,body:[.2,.55,.35],dark:[.08,.2,.13],acc:[.9,.9,.95],glass:[.08,.12,.1],glow:[.4,1,.6]},
+ {name:'Golden',need:13,body:[.95,.73,.2],dark:[.45,.32,.08],acc:[.1,.1,.12],glass:[.1,.1,.12],glow:[1,.85,.4]},
 ];
 const ENEMY={body:[.34,.36,.4],dark:[.12,.13,.15],acc:[.75,.12,.1],eye:RED,glow:RED};
 const MESH={
@@ -450,6 +491,18 @@ const MESH={
 };
 const bodyCache={},wingCache={};
 const hawkB=i=>bodyCache[i]||(bodyCache[i]=hawkBody(SKINS[i])),hawkW=i=>wingCache[i]||(wingCache[i]=hawkWing(SKINS[i]));
+const SHIPS=[
+ {id:'starhawk',name:'Starhawk',need:0,tag:'All-rounder · wings open for battle',steer:4.5,dmg:1,msl:8,rate:.1},
+ {id:'halo',name:'Halo Racer',need:0,tag:'Super quick · fast lasers · lighter shields',steer:6.2,dmg:1.2,msl:6,rate:.085,mk:haloMesh,
+  guns:[[3.95,0,-2.7],[-3.95,0,-2.7]],xg:[[0,.9,-9],[0,-.9,-9]],eng:[[0,0,5.3,.85],[3.95,0,5.2,.55],[-3.95,0,5.2,.55]],lt:[[3.7,.4,3],[-3.7,.4,3]]},
+ {id:'manta',name:'Manta Ray',need:3,tag:'Carries 12 torpedoes',steer:4.6,dmg:1,msl:12,rate:.1,mk:mantaMesh,
+  guns:[[6.5,-.1,-2.2],[-6.5,-.1,-2.2]],xg:[[1.5,0,-6],[-1.5,0,-6]],eng:[[-1.3,.1,4.8,.85],[1.3,.1,4.8,.85]],lt:[[8.9,.35,2.6],[-8.9,.35,2.6]]},
+ {id:'thunder',name:'Thunderbolt',need:6,tag:'Heavy armor · 3 cannons · slower',steer:3.7,dmg:.65,msl:10,rate:.11,mk:thunderMesh,
+  guns:[[7,0,-6.7],[-7,0,-6.7],[0,-1.2,-10.7]],xg:[[0,1.6,-1.2],[.7,1.6,-1.2]],eng:[[4,0,6,.75],[-4,0,6,.75],[7,0,6,.75],[-7,0,6,.75]],lt:[[7.85,.6,1.5],[-7.85,.6,1.5]]},
+ {id:'twin',name:'Twin Star',need:9,tag:'Rapid-fire twin cannons',steer:4.9,dmg:.9,msl:8,rate:.075,mk:twinMesh,
+  guns:[[4,0,-10.3],[-4,0,-10.3]],xg:[[1,.3,-7.8],[-1,.3,-7.8]],eng:[[4,0,6.3,.8],[-4,0,6.3,.8]],lt:[[4,2.5,5],[-4,2.5,5]]},
+];
+const shipCache={};const shipBody=(si,ki)=>si===0?hawkB(ki):(shipCache[si+'_'+ki]||(shipCache[si+'_'+ki]=SHIPS[si].mk(SKINS[ki])));
 const TER={ice:[0,22,90,230,95,0],tech:[0,30,70,140,60,8]};
 const LV=[
  {name:'Asteroid Ambush',mode:'space',boss:0,len:60,gap:3.5,mix:{flight:6,inter:1,gunship:1,rocks:4},xmax:70,col:'linear-gradient(135deg,#a16207,#1e1b4b)',
@@ -478,7 +531,7 @@ const BOSSES=[
  {name:'DREAD CORE',mesh:'core',sc:1.2,hp:300,dist:220,jink:.4,box:[16,16,14],atk:[['ring',3.2],['msl',4.5],['flak',5],['guns',2.2],['minions',11]],ring:1},
 ];
 const SCORE={dart:100,razor:150,gunship:400,emsl:25,mine:30,rock:20,gen:500};
-let save={stars:[0,0,0,0,0],skin:0};
+let save={stars:[0,0,0,0,0],skin:0,ship:0};
 try{const s=JSON.parse(localStorage.getItem('galaxystrike_save')||'null');if(s&&Array.isArray(s.stars))save=Object.assign(save,s);}catch(e){}
 function store(){try{localStorage.setItem('galaxystrike_save',JSON.stringify(save));}catch(e){}}
 const totalStars=()=>save.stars.reduce((a,b)=>a+b,0),unlocked=i=>i===0||save.stars[i-1]>0;
@@ -564,13 +617,13 @@ function buildWaves(n){
   for(let p=12;p<L.len;p+=15)ev.push({t:p,k:'pickup',a:r(),b:r()});
   ev.sort((a,b)=>a.t-b.t);return ev;
 }
-function startLevel(n,demo){
+function startLevel(n,demo,own){
   const L=LV[n];
   S={n,L,demo:!!demo,t:0,ev:buildWaves(n),ei:0,E:[],B:[],EB:[],M:[],PT:[],C:[],K:[],D:[],timers:[],
      p:{x:0,y:0,z:0,tx:0,ty:0,vx:0,vy:0,roll:0,pitch:0,armor:100,msl:8,pow:1,inv:0,dead:0,fireT:0,mslCd:0,lock:null,lockT:0,lockSnd:0,wing:0,gs:0},
-     kills:0,spawned:0,score:0,phase:'intro',boss:null,shake:0,hurtF:0,endT:0,banner:null,radio:null,skin:demo?((rand()*SKINS.length)|0):save.skin,pw:0,
+     kills:0,spawned:0,score:0,phase:'intro',boss:null,shake:0,hurtF:0,endT:0,banner:null,radio:null,skin:demo&&!own?((rand()*SKINS.length)|0):save.skin,ship:demo&&!own?((rand()*SHIPS.length)|0):save.ship,pw:0,
      warnT:0,flashS:0,firstKill:false,lowSaid:false};
-  const p=S.p;p.y=p.ty=L.T?gY(0,0)+34:0;
+  const p=S.p;S.SH=SHIPS[S.ship]||SHIPS[0];p.msl=S.SH.msl;p.y=p.ty=L.T?gY(0,0)+34:0;
   for(let i=0;i<L.cn;i++)addCloud(-rr(100,1500));
   for(let i=0;i<160;i++)S.D.push([rr(-80,80),p.y+rr(-50,50),rr(-400,20)]);
   if(L.rocks)for(let i=0;i<14;i++)bgRock(-rr(200,1400));
@@ -624,7 +677,7 @@ function addCloud(dz){const L=S.L,p=S.p,z=p.z+dz,x=rr(-400,400),y=rr(L.cy[0],L.c
   for(let i=0;i<n;i++)S.C.push({x:x+rr(-1,1)*s*1.6,y:y+rr(-.6,.6)*s,z:z+rr(-1,1)*s,s:s*rr(.7,1.3),a:rr(.25,.5),b:rr(.7,1.2)});}
 
 /* ===================== simulation ===================== */
-function hurt(d){const p=S.p;if(p.inv>0||p.dead||S.demo)return;p.armor=Math.max(0,p.armor-d);p.inv=.9;S.hurtF=.5;S.shake=Math.max(S.shake,7);sfx.hurt();p.gs=.4;
+function hurt(d){const p=S.p;if(p.inv>0||p.dead||S.demo)return;p.armor=Math.max(0,p.armor-d*S.SH.dmg);p.inv=.9;S.hurtF=.5;S.shake=Math.max(S.shake,7);sfx.hurt();p.gs=.4;
   if(p.armor<=0){p.dead=.01;boom(p.x,p.y,p.z,2.5);say('Starhawk is going down! Eject, Max!','COMMAND');}
   else if(p.armor<35&&!S.lowSaid){S.lowSaid=true;say('Max, your shields are low! Grab a 🔧!','WINGMAN');}}
 function kill(e){
@@ -652,7 +705,7 @@ function step(){
   if(s.phase==='intro'&&s.t>=(s.demo?.1:2.6))s.phase='waves';
   if(s.phase==='waves'){const wt=s.t-(s.demo?.1:2.6);while(s.ei<s.ev.length&&wt>=s.ev[s.ei].t){spawn(s.ev[s.ei]);s.ei++;}
     if(s.ei>=s.ev.length&&!s.E.some(e=>!e.dead&&(e.type==='dart'||e.type==='razor'||e.type==='gunship')))startBoss();}
-  p.wing+=((s.phase==='intro'&&!s.demo?0:1)-p.wing)*DT*2.2;
+  p.wing+=((s.phase==='intro'&&!s.demo&&s.ship===0?0:1)-p.wing)*DT*2.2;
   const speed=p.dead?SPD*.8:SPD;p.z-=speed*DT;
   if(!p.dead){
     if(s.demo){const tg=(s.boss&&!s.boss.dead)?s.boss:s.E.find(e=>!e.dead&&e.z<p.z-80&&lockable(e));
@@ -660,7 +713,7 @@ function step(){
     else{const k=72*DT;if(keys.l)p.tx-=k;if(keys.r)p.tx+=k;if(keys.u)p.ty+=k*.8;if(keys.d)p.ty-=k*.8;}
     const xm=L.xmax;p.tx=clamp(p.tx,-xm,xm);
     if(L.T){const minY=Math.max(gY(p.x,p.z),gY(p.x,p.z-50),gY(p.tx,p.z-30))+7;p.ty=clamp(p.ty,minY,130);}else p.ty=clamp(p.ty,-48,48);
-    const nx=p.x+(p.tx-p.x)*Math.min(1,4.5*DT),ny=p.y+(p.ty-p.y)*Math.min(1,4.5*DT);
+    const nx=p.x+(p.tx-p.x)*Math.min(1,S.SH.steer*DT),ny=p.y+(p.ty-p.y)*Math.min(1,S.SH.steer*DT);
     p.vx=(nx-p.x)/DT;p.vy=(ny-p.y)/DT;p.x=nx;p.y=ny;
     p.roll+=(clamp(-p.vx*.022,-1.1,1.1)-p.roll)*.1;p.pitch+=(clamp(p.vy*.012,-.35,.35)-p.pitch)*.12;
     if(L.T){const g=gY(p.x,p.z);if(p.y<g+2.5){p.y=g+4;p.ty=Math.max(p.ty,g+10);hurt(10);}}
@@ -670,14 +723,14 @@ function step(){
     if(best&&best===p.lock)p.lockT+=DT;else{p.lock=best;p.lockT=0;}
     if(p.lock&&p.lockT>=.35&&!p.lockSnd){p.lockSnd=1;sfx.lock();}if(!p.lock||p.lockT<.35)p.lockSnd=0;
     if(s.phase!=='intro'&&s.phase!=='clear'){
-      p.fireT+=DT;const rate=p.pow>=3?.07:.1;
+      p.fireT+=DT;const rate=S.SH.rate*(p.pow>=3?.7:1);
       if(p.fireT>=rate){p.fireT=0;p.alt=!p.alt;
         const tg=p.lock;let dir=[0,0,-1];
         if(tg){const dz=p.z-tg.z;if(dz>0){const tt=dz/700;const aim=nrm([tg.x+(tg.vx||0)*tt-p.x,tg.y-p.y,-dz]);if(dot(aim,[0,0,-1])>.975)dir=aim;}}
-        const M=shipM(),WR=wingM(M,1),WL=wingM(M,-1);
-        const guns=p.pow>=2?[[WR,1],[WL,1],[M,.7],[M,-.7]]:[[p.alt?WR:WL,1]];
-        if(p.pow<2&&true)guns.push([p.alt?WL:WR,1]);
-        for(const [GM,k] of guns){const o=GM===M?xf(M,[k*1.2,-.2,-8]):xf(GM,[7.65,0,-6.2]);let dd;if(dir[2]!==-1||dir[0]!==0){const tz=tg?Math.max(40,p.z-tg.z):300;const tp=[p.x+dir[0]/-dir[2]*tz,p.y+dir[1]/-dir[2]*tz,p.z-tz];dd=nrm(sub(tp,o));}else dd=nrm([p.x-o[0],p.y+.4-o[1],-300]);
+        const M=shipM(),SH=S.SH;let origins;
+        if(S.ship===0){const WR=wingM(M,1),WL=wingM(M,-1);origins=[xf(WR,[7.65,0,-6.2]),xf(WL,[7.65,0,-6.2])];if(p.pow>=2)origins.push(xf(M,[1.2,-.2,-8]),xf(M,[-1.2,-.2,-8]));}
+        else{origins=SH.guns.map(g=>xf(M,g));if(p.pow>=2)for(const g of SH.xg)origins.push(xf(M,g));}
+        for(const o of origins){let dd;if(dir[2]!==-1||dir[0]!==0){const tz=tg?Math.max(40,p.z-tg.z):300;const tp=[p.x+dir[0]/-dir[2]*tz,p.y+dir[1]/-dir[2]*tz,p.z-tz];dd=nrm(sub(tp,o));}else dd=nrm([p.x-o[0],p.y+.4-o[1],-300]);
           s.B.push({x:o[0],y:o[1],z:o[2],vx:dd[0]*700+p.vx*.3,vy:dd[1]*700+p.vy*.3,vz:dd[2]*700-SPD,l:1.4});
           puff(o[0],o[1],o[2],.9,[.6,1.6,3],1,.05,0,0,-SPD,0,true);}
         sfx.laser();}
@@ -722,7 +775,8 @@ function step(){
     if(k.z>p.z+30)k.dead=1;}
   for(const q of s.PT){q.l-=DT;q.x+=q.vx*DT;q.y+=q.vy*DT;q.z+=q.vz*DT;q.vx*=.97;q.vy*=.97;q.vz*=.97;q.s+=q.g*DT;}
   s.PT=s.PT.filter(q=>q.l>0&&q.z<p.z+80);
-  if(!p.dead){const M=shipM();const q=xf(M,[0,0,7.2]);puff(q[0],q[1],q[2],rr(.7,1),[.5*1.6,1.1*1.6,2*1.6].map((v,i)=>SKINS[s.skin].glow[i]*2.4),1,.07,0,0,-SPD*.5,-4,true);
+  if(!p.dead&&S.ship!==0){const M=shipM();for(const e of S.SH.eng){const q=xf(M,e);puff(q[0],q[1],q[2],rr(.7,1)*e[3],SKINS[s.skin].glow.map(v=>v*2.4),1,.07,0,0,-SPD*.5,-4,true);}}
+  if(!p.dead&&S.ship===0){const M=shipM();const q=xf(M,[0,0,7.2]);puff(q[0],q[1],q[2],rr(.7,1),[.5*1.6,1.1*1.6,2*1.6].map((v,i)=>SKINS[s.skin].glow[i]*2.4),1,.07,0,0,-SPD*.5,-4,true);
     for(const sg of [1,-1]){const W=wingM(M,sg);const t=xf(W,[7.65,0,3.9]);puff(t[0],t[1],t[2],rr(.55,.8),SKINS[s.skin].glow.map(v=>v*2.4),1,.06,0,0,-SPD*.5,-4,true);}}
   s.C=s.C.filter(c=>c.z<p.z+40);while(s.C.length<L.cn*7)addCloud(-rr(1300,1700));
   for(const d of s.D){if(d[2]>p.z+15){d[0]=p.x+rr(-90,90);d[1]=p.y+rr(-55,55);d[2]=p.z-rr(300,420);}}
@@ -859,10 +913,10 @@ function render(){
     if(b.ring)drawMesh(MESH.ring,mmul(bm,model(0,0,0,0,0,b.ra,1)),0,b.ca);
     gl.disable(gl.BLEND);gl.depthMask(true);}
   const M=shipM();const blink=p.inv>0&&((s.t*14)|0)%2;
-  if(!(p.dead>.6)){drawMesh(hawkB(s.skin),M,blink?.5:0);drawMesh(hawkW(s.skin),wingM(M,1),blink?.5:0);drawMesh(hawkW(s.skin),wingM(M,-1),blink?.5:0);}
+  if(!(p.dead>.6)){drawMesh(shipBody(s.ship,s.skin),M,blink?.5:0);if(s.ship===0){drawMesh(hawkW(s.skin),wingM(M,1),blink?.5:0);drawMesh(hawkW(s.skin),wingM(M,-1),blink?.5:0);}}
   if(L.T){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.uniform1f(PM.u.uFlat,1);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(-4,-4);
     const shadow=(m,x,y,z,roll,sc)=>{const g=gY(x,z),h=y-g;if(h>140||h<0)return;drawMesh(m,model(x-L.sunN[0]/L.sunN[1]*h*.6,g+.3,z-L.sunN[2]/L.sunN[1]*h*.25,0,0,roll*.5,sc||1,.02),0,.35*(1-h/140));};
-    if(!p.dead)shadow(hawkB(s.skin),p.x,p.y,p.z,p.roll,1.6);
+    if(!p.dead)shadow(shipBody(s.ship,s.skin),p.x,p.y,p.z,p.roll,1.6);
     if(b&&!b.gone&&!b.ground)shadow(MESH[b.mesh],b.x,b.y,b.z,b.roll,b.sc);
     for(const e of s.E)if(e.mesh&&e.type!=='gen')shadow(MESH[e.mesh],e.x,e.y,e.z,e.roll||0,e.sc||1);
     gl.disable(gl.POLYGON_OFFSET_FILL);gl.uniform1f(PM.u.uFlat,0);}
@@ -888,7 +942,7 @@ function render(){
   if(b&&!b.gone&&b.cloak&&b.ca<.5){for(let i=0;i<10;i++)quad(b.x+rr(-17,17)*b.sc,b.y+rr(-2,2),b.z+rr(-10,10),1.2,.9,.5,1.6,.6);}
   for(const k of s.K){const c=k.k==='repair'?[.4,2,.8]:k.k==='ammo'?[.5,1.1,2.2]:[2.2,1.6,.4];quad(k.x,k.y,k.z,4+Math.sin(k.t*6),c[0],c[1],c[2],.8);quad(k.x,k.y,k.z,1.8,2,2,2,1);
     for(let i=0;i<8;i++){const a=i/8*TAU+k.t*2;quad(k.x+Math.cos(a)*6,k.y+Math.sin(a)*6,k.z,.8,c[0],c[1],c[2],1);}}
-  if(!p.dead){const t=((s.t*1.2)%1)<.12;for(const sg of [1,-1]){const W=wingM(M,sg);const q=xf(W,[7.65,.62,-.5]);const c=sg>0?[.4,2.4,.6]:[2.6,.3,.2];quad(q[0],q[1],q[2],t?.9:.35,c[0],c[1],c[2],1);}}
+  if(!p.dead){const t=((s.t*1.2)%1)<.12;for(const sg of [1,-1]){const q=s.ship===0?xf(wingM(M,sg),[7.65,.62,-.5]):xf(M,s.SH.lt[sg>0?0:1]);const c=sg>0?[.4,2.4,.6]:[2.6,.3,.2];quad(q[0],q[1],q[2],t?.9:.35,c[0],c[1],c[2],1);}}
   gl.blendFunc(gl.ONE,gl.ONE);gl.bufferSubData(gl.ARRAY_BUFFER,0,PB,0,pq*60);gl.uniform1f(PP.u.uAdd,1);gl.drawArrays(gl.TRIANGLES,0,pq*6);
   gl.depthMask(true);gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);
   // ---- post: resolve, bloom, composite
@@ -931,7 +985,7 @@ function drawHUD(){
   for(const e of s.E)if(e.type==='emsl'){const q=prj(e.x,e.y,e.z);if(q&&q[0]>0&&q[0]<VW&&q[1]>0&&q[1]<VH){hx.strokeStyle='#ff4040';hx.lineWidth=2;hx.beginPath();hx.arc(q[0],q[1],9,0,TAU);hx.stroke();}}
   for(const k of s.K){const q=prj(k.x,k.y+8,k.z);if(q&&q[2]<700)htext(k.k==='repair'?'🔧 SHIELDS':k.k==='ammo'?'🚀 TORPEDOES':'⭐ LASERS',q[0],q[1],11,'#fff','center');}
   const ax=14,ay=top;hx.fillStyle='rgba(3,8,20,.55)';rrect(ax,ay,190,40,10);hx.fill();
-  htext('STARHAWK · MAX',ax+12,ay+11,9,'#9fe8ff','left',700);
+  htext(S.SH.name.toUpperCase()+' · MAX',ax+12,ay+11,9,'#9fe8ff','left',700);
   hx.fillStyle='rgba(255,255,255,.15)';rrect(ax+12,ay+21,166,10,5);hx.fill();
   hx.fillStyle=p.armor>50?'#38d8ff':p.armor>25?'#facc15':'#ef4444';if(p.armor>0){rrect(ax+12,ay+21,Math.max(10,166*Math.min(1,p.armor/100)),10,5);hx.fill();}
   htext('🚀 '+p.msl+'   ⭐ '+p.pow,ax+4,ay+56,13,'#fff','left',700);
@@ -957,11 +1011,11 @@ function rating(){const kp=S.spawned?S.kills/S.spawned:1,a=S.p.armor;if(a>=50&&k
 function levelDone(){
   running=false;document.body.classList.remove('playing');
   const n=S.n,st=rating(),before=totalStars();save.stars[n]=Math.max(save.stars[n],st);store();
-  const nj=SKINS.find(k=>k.need>before&&k.need<=totalStars()),last=n===LV.length-1;
+  const nj=[...SHIPS.map(k=>({k,w:'ship'})),...SKINS.map(k=>({k,w:'paint'}))].filter(o=>o.k.need>before&&o.k.need<=totalStars()).map(o=>o.k.name+(o.w==='paint'?' paint':'')).join(' + ')||null,last=n===LV.length-1;
   $('resTitle').textContent=last?'🏆 Max saved the galaxy! 🏆':'Mission complete!';
   $('resStars').textContent='★'.repeat(st)+'☆'.repeat(3-st);
   $('resSub').innerHTML=`Enemies destroyed: ${S.kills} / ${S.spawned}<br>Shields left: ${Math.round(S.p.armor)}%<br>Score: ${S.score}`+
-    (nj?`<br>🎉 New ship unlocked: <b style="color:var(--gold)">${nj.name}</b>!`:'')+(st<3?'<br>Tip: keep your shields up and blast more fighters for 3 ★':'');
+    (nj?`<br>🎉 New in your hangar: <b style="color:var(--gold)">${nj}</b>!`:'')+(st<3?'<br>Tip: keep your shields up and blast more fighters for 3 ★':'');
   const box=$('resBtns');box.innerHTML='';if(!last)btn(box,'big','NEXT MISSION',()=>go(n+1));
   btn(box,'mid','Fly again',()=>go(n));if(nj)btn(box,'mid','🚀 Hangar',()=>{hangBack='map';showHangar();});btn(box,'mid','All missions',showMap);show('scr-result');
 }
@@ -971,19 +1025,25 @@ function gameOver(){document.body.classList.remove('playing');sfx.lose();$('resT
 function btn(box,cls,label,fn){const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=()=>{audio();fn();};box.appendChild(b);if(cls==='big')box.appendChild(document.createElement('br'));}
 function go(n){show(null);startLevel(n,false);}
 function show(id){for(const s of ['scr-title','scr-map','scr-hangar','scr-result','scr-pause'])$(s).classList.toggle('hidden',s!==id);}
-function demoBG(){if(!S||!S.demo||!running)startLevel((rand()*5)|0,true);}
+function demoBG(){if(!S||!S.demo||!running||S.own)startLevel((rand()*5)|0,true);}
 function showMap(){demoBG();const box=$('map');box.innerHTML='';
   LV.forEach((L,i)=>{const open=unlocked(i),b=document.createElement('button');b.className='lv'+(open?'':' lock');b.style.background=L.col;
     b.innerHTML=`<span class="n">${open?i+1:'🔒'}</span><span class="t">${L.name}</span><span class="b">Boss: ${tc(BOSSES[L.boss].name)}</span><span class="s">${'★'.repeat(save.stars[i])}${'☆'.repeat(3-save.stars[i])}</span>`;
     b.onclick=()=>{if(!open)return;audio();go(i);};box.appendChild(b);});
   $('mapTotal').textContent=`★ ${totalStars()} / 15`;show('scr-map');}
 let hangBack='title';
-function showHangar(){demoBG();const box=$('hangar');box.innerHTML='';const tot=totalStars();
+function showHangar(fresh){if(fresh!==false)demoOwn();const tot=totalStars();
+  const sb=$('hangShips');sb.innerHTML='';
+  SHIPS.forEach((k,i)=>{const open=tot>=k.need,b=document.createElement('button');b.className='pl'+(i===save.ship?' on':'')+(open?'':' lock');
+    b.innerHTML=`<img src="ships/${k.id}.png" alt="${k.name} starfighter"><span class="nm">${k.name}</span><span class="tg">${k.tag}</span><span class="tg">${open?(i===save.ship?'✔ Flying this one':'Tap to fly'):'🔒 Needs '+k.need+' ★'}</span>`;
+    b.onclick=()=>{if(!open)return;save.ship=i;store();demoOwn();showHangar(false);};sb.appendChild(b);});
+  const box=$('hangar');box.innerHTML='';
   SKINS.forEach((k,i)=>{const open=tot>=k.need,b=document.createElement('button');b.className='pl'+(i===save.skin?' on':'')+(open?'':' lock');
     const c=x=>`rgb(${x.map(v=>Math.round(Math.min(1,v)*255)).join(',')})`;
-    b.innerHTML=`<span class="sw" style="background:linear-gradient(135deg,${c(k.body)} 0 55%,${c(k.dark)} 55% 80%,${c(k.acc)} 80%)"></span><span class="nm">${k.name}</span><span class="tg">${open?(i===save.skin?'✔ Flying this one':'Tap to fly'):'🔒 Needs '+k.need+' ★'}</span>`;
-    b.onclick=()=>{if(!open)return;save.skin=i;store();showHangar();};box.appendChild(b);});
+    b.innerHTML=`<span class="sw" style="background:linear-gradient(135deg,${c(k.body)} 0 55%,${c(k.dark)} 55% 80%,${c(k.acc)} 80%)"></span><span class="nm">${k.name}</span><span class="tg">${open?(i===save.skin?'✔ Painted':'Tap to paint'):'🔒 Needs '+k.need+' ★'}</span>`;
+    b.onclick=()=>{if(!open)return;save.skin=i;store();demoOwn();showHangar(false);};box.appendChild(b);});
   $('hangTotal').textContent=`You have ★ ${tot}`;show('scr-hangar');}
+function demoOwn(){startLevel(0,true,true);S.own=1;}
 function togglePause(){if(!S||S.demo||!running)return;paused=!paused;drag=null;show(paused?'scr-pause':null);}
 $('b-play').onclick=()=>{audio();showMap();};
 $('b-hangar').onclick=()=>{audio();hangBack='title';showHangar();};
